@@ -1,4 +1,7 @@
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 buildscript {
+    ext.kotlin_version = '1.7.20'
   repositories {
     google()
     mavenCentral()
@@ -6,6 +9,7 @@ buildscript {
 
   dependencies {
     classpath "com.android.tools.build:gradle:7.2.1"
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
   }
 }
 
@@ -52,7 +56,14 @@ android {
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
-
+    resValue 'string', 'app_name', 'Razer'
+        manifestPlaceholders = [app_name: 'Razer']
+        buildConfigField 'String', 'FLAVOR_environment', '"uat"'
+        buildConfigField 'String', 'ACCESS_KEY', '"ANTSPb9gbzBsmQ5nT0tYwnWjyF+Fec99zlrlKSsjrMkfAg=="' // Visa, Master, MCCS, UPI
+        buildConfigField 'String', 'SECRET_KEY', '"Hej/j+o69unLyI/o5Bfd6U41IT406ub6HqNZrTP6+qQ="' // Visa, Master, MCCS, UPI
+        buildConfigField 'String', 'ATTESTATION_HOST', '" https://mpos-uat.fasspay.com:9001"'
+        buildConfigField 'String', 'ATTESTATION_CERT_PINNING', '"sha256/BJlJjxY7OHxhAz6yqy2gm58+qlP0AGwnBHDIG6zkhfU="'
+        buildConfigField 'String', 'GOOGLE_API_KEY', '"AIzaSyD9l4ImfUXhDAMz4Df5rdt7gItDy91fXTE"'
   }
 
   buildTypes {
@@ -82,5 +93,26 @@ dependencies {
   // For > 0.71, this will be replaced by `com.facebook.react:react-android:$version` by react gradle plugin
   //noinspection GradleDynamicVersion
   implementation "com.facebook.react:react-native:+"
+    debugImplementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'], excludes: ['ssmobile-pog-engine-release.aar'])
+    releaseImplementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'], excludes: ['ssmobile-pog-engine-debug.aar'])
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+
+    // SSFasstapSDK dependencies
+    implementation 'com.google.android.play:integrity:1.0.2'
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    implementation 'io.reactivex.rxjava2:rxjava:2.2.19'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
+    implementation 'com.squareup.okhttp3:okhttp:3.14.7'
+    implementation 'androidx.room:room-runtime:2.2.5'
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
+    implementation 'com.jakewharton.timber:timber:4.7.0'
+    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "androidx.lifecycle:lifecycle-process:2.2.0"
 }
 

@@ -20,3 +20,22 @@ const TapPayRazerRn = NativeModules.TapPayRazerRn
 export function multiply(a: number, b: number): Promise<number> {
   return TapPayRazerRn.multiply(a, b);
 }
+
+export function startEMVProcessing(
+  amount: string,
+  referenceNumber: string
+): Promise<boolean> {
+  return TapPayRazerRn.startEMVProcessing(amount, referenceNumber);
+}
+
+export function checkAndRequestNFCPermission(): Promise<boolean> {
+  return TapPayRazerRn.checkAndRequestNFCPermission();
+}
+
+export function performSettlement(): Promise<boolean> {
+  return TapPayRazerRn.performSettlement();
+}
+
+export function refreshToken(): Promise<boolean> {
+  return TapPayRazerRn.refreshToken();
+}

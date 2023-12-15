@@ -1,3 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.tappayrazerrn">
+    package="com.tappayrazerrn">
+    <uses-permission android:name="com.samsung.android.teelicense" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+    <uses-feature android:name="android.hardware.nfc" android:required="true" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <activity
+        android:name=".MyReactActivity"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+</activity>
 </manifest>
