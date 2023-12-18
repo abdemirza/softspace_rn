@@ -641,7 +641,7 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
         @Override
         public void run() {
           writeLog("Amount, Authorised: " + amount);
-          showToast("Amount, Authorised: " + amount);
+          showToast("Amount, Authorised::: " + amount);
         }
       }
     );
@@ -665,7 +665,7 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
               MPOSTransactionOutcome transactionOutcome
             ) {
               _transactionOutcome = transactionOutcome;
-
+              showToast("Line 668");
               // Handle transaction result
               if (result == TransactionSuccessful) {
                 // Handle successful transaction

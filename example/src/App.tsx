@@ -8,6 +8,11 @@ import {
   ToastAndroid,
   NativeModules,
 } from 'react-native';
+import {
+  checkAndRequestNFCPermission,
+  refreshToken,
+  startEMVProcessing,
+} from 'tap_pay_razer_rn';
 // import {
 //   checkAndRequestNFCPermission,
 //   multiply,
@@ -16,14 +21,12 @@ import {
 // } from 'tap_pay_razer_rn';
 
 export default function App() {
-  const { checkAndRequestNFCPermission, startEMVProcessing } =
-    NativeModules.TapPayRazer;
   React.useEffect(() => {
     console.log(NativeModules.TapPayRazer, 'HELLO');
   }, []);
 
   const refreshTokenHandler = () => {
-    // refreshToken();
+    refreshToken();
   };
 
   const onPressHandler = () => {
@@ -60,7 +63,6 @@ export default function App() {
           <Text>Refresh Token</Text>
         </View>
       </TouchableOpacity>
-      <Text>Result: {result}</Text>
     </View>
   );
 }
