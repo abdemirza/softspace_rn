@@ -7,6 +7,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -46,12 +47,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import com.facebook.react.ReactActivity;
 import com.facebook.react.bridge.Promise;
-import com.facebook.react.bridge.Promise;
-import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
-import com.facebook.react.bridge.ReactContextBaseJavaModule;
-import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeMap;
@@ -88,7 +85,6 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
 
   public TapPayRazerRnModule(ReactApplicationContext reactContext) {
     super(reactContext);
-    // Initialization code
   }
 
   @Override
@@ -109,76 +105,121 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
     return NAME;
   }
 
-  private void initFasstapMPOSSDK() {
-    try {
-      ReactActivity reactActivity = (ReactActivity) getCurrentActivity();
-      // final Activity reactActivity = getCurrentActivity();
+  @ReactMethod
+  public void initFasstapMPOSSDK() {
+    final ReactApplicationContext reactContext = getReactApplicationContext();
 
-      if (reactActivity == null) {
-        // Handle the case when the activity is not available
-        new Handler(Looper.getMainLooper())
-          .post(
-            new Runnable() {
-              @Override
-              public void run() {
-                Toast
-                  .makeText(
-                    getReactApplicationContext(),
-                    "IT IS NULL",
-                    Toast.LENGTH_SHORT
-                  )
-                  .show();
+    // Run the entire initialization on the main thread
+    runOnUiThread(
+      reactContext,
+      new Runnable() {
+        @Override
+        public void run() {
+          // ... (configuration details)
+          try {
+            SSMPOSSDKConfiguration config = SSMPOSSDKConfiguration.Builder
+              .create()
+              .setAttestationHost(BuildConfig.ATTESTATION_HOST)
+              .setAttestationHostCertPinning(
+                BuildConfig.ATTESTATION_CERT_PINNING
+              )
+              .setAttestationHostReadTimeout(10000L)
+              .setAttestationRefreshInterval(300000L)
+              .setAttestationStrictHttp(true)
+              .setAttestationConnectionTimeout(30000L)
+              .setLibGooglePlayProjNum("262431422959") // use own google play project number
+              .setLibAccessKey(BuildConfig.ACCESS_KEY)
+              .setLibSecretKey(BuildConfig.SECRET_KEY)
+              .setUniqueID("xdIu2XwPpPRrTSaJdZi1") // please set the userID shared by Soft Space
+              .setDeveloperID("ZCh9mzZXqHzezf4")
+              .setEnvironment(
+                BuildConfig.FLAVOR_environment.equals("uat")
+                  ? Environment.UAT
+                  : Environment.PROD
+              )
+              .build();
+
+            SSMPOSSDK.init(reactContext, config);
+
+            // Request permission using PermissionAwareActivity on the main thread
+            if (!SSMPOSSDK.hasRequiredPermission(reactContext)) {
+              final PermissionListener listener = new PermissionListener() {
+                @Override
+                public boolean onRequestPermissionsResult(
+                  int requestCode,
+                  String[] permissions,
+                  int[] grantResults
+                ) {
+                  boolean granted = true; // Modify as needed based on grantResults
+                  if (granted) {
+                    // Permission granted, continue with the initialization
+                  } else {
+                    // Permission denied, handle accordingly
+                  }
+                  return true;
+                }
+              };
+
+              // Run the permission request on the main thread
+              Activity activity = getCurrentActivity();
+              if (activity != null) {
+                PermissionAwareActivity permissionAwareActivity = (PermissionAwareActivity) activity;
+                if (permissionAwareActivity != null) {
+                  permissionAwareActivity.requestPermissions(
+                    new String[] { /* Add required permissions */ },
+                    1000,
+                    listener
+                  );
+                }
               }
             }
-          );
-        return;
-      }
-
-      SSMPOSSDKConfiguration config = SSMPOSSDKConfiguration.Builder
-        .create()
-        .setAttestationHost(BuildConfig.ATTESTATION_HOST)
-        .setAttestationHostCertPinning(BuildConfig.ATTESTATION_CERT_PINNING)
-        .setAttestationHostReadTimeout(10000L)
-        .setAttestationRefreshInterval(300000L)
-        .setAttestationStrictHttp(true)
-        .setAttestationConnectionTimeout(30000L)
-        .setLibGooglePlayProjNum("262431422959") // use own google play project number
-        .setLibAccessKey(BuildConfig.ACCESS_KEY)
-        .setLibSecretKey(BuildConfig.SECRET_KEY)
-        .setUniqueID("xdIu2XwPpPRrTSaJdZi1") // please set the userID shared by Soft Space
-        .setDeveloperID("ZCh9mzZXqHzezf4")
-        .setEnvironment(
-          BuildConfig.FLAVOR_environment.equals("uat")
-            ? Environment.UAT
-            : Environment.PROD
-        )
-        .build();
-      if (checkLocationPermission(reactActivity)) {
-        // Location permission is already granted
-        // You can now perform actions that require location access
-      } else {
-        // Location permission is not granted, request it
-        requestLocationPermission(reactActivity);
-      }
-      // });
-    } catch (Exception e) {
-      new Handler(Looper.getMainLooper())
-        .post(
-          new Runnable() {
-            @Override
-            public void run() {
-              Toast
-                .makeText(
-                  getReactApplicationContext(),
-                  "Errorrrrr: " + e,
-                  Toast.LENGTH_SHORT
-                )
-                .show();
-            }
+          } catch (Exception e) {
+            showToast("FasstapMPOSSDK " + e.getMessage());
           }
-        );
-    }
+        }
+      }
+    );
   }
+
+  // Utility method to run code on the main thread
+  private void runOnUiThread(
+    ReactApplicationContext reactContext,
+    Runnable runnable
+  ) {
+    reactContext.runOnUiQueueThread(runnable);
+  }
+
+  // @ReactMethod
+  // public void initFasstapMPOSSDK() {
+  //   Context context = getReactApplicationContext();
+
+  //   SSMPOSSDKConfiguration config = SSMPOSSDKConfiguration.Builder
+  //     .create()
+  //     .setAttestationHost(BuildConfig.ATTESTATION_HOST)
+  //     .setAttestationHostCertPinning(BuildConfig.ATTESTATION_CERT_PINNING)
+  //     .setAttestationHostReadTimeout(10000L)
+  //     .setAttestationRefreshInterval(300000L)
+  //     .setAttestationStrictHttp(true)
+  //     .setAttestationConnectionTimeout(30000L)
+  //     .setLibGooglePlayProjNum("262431422959") // use own google play project number
+  //     .setLibAccessKey(BuildConfig.ACCESS_KEY)
+  //     .setLibSecretKey(BuildConfig.SECRET_KEY)
+  //     .setUniqueID("xdIu2XwPpPRrTSaJdZi1") // please set the userID shared by Soft Space
+  //     .setDeveloperID("ZCh9mzZXqHzezf4")
+  //     .setEnvironment(
+  //       BuildConfig.FLAVOR_environment.equals("uat")
+  //         ? Environment.UAT
+  //         : Environment.PROD
+  //     )
+  //     .build();
+
+  //   SSMPOSSDK.init(context, config);
+
+  //   if (!SSMPOSSDK.hasRequiredPermission(context)) {
+  //     // Assuming the method takes only the context as a parameter
+  //     SSMPOSSDK.requestPermissionIfRequired(context);
+  //   }
+  // }
 
   // Example method
   // See https://reactnative.dev/docs/native-modules-android
@@ -284,12 +325,13 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
               int result,
               MPOSTransactionOutcome transactionOutcome
             ) {
-              handleRefreshTokenResult(result, transactionOutcome);
+              showToast("result :: " + result);
+              // handleRefreshTokenResult(result, transactionOutcome);
             }
 
             @Override
             public void onTransactionUIEvent(int event) {
-              writeLog("onTransactionUIEvent :: " + event);
+              showToast("onTransactionUIEvent :: " + event);
             }
           }
         );
@@ -578,18 +620,16 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
   @ReactMethod
   public void startEMVProcessing(
     String amount,
-    String referenceNumber,
+    String referenceNumberr,
     final Promise promise
   ) {
     ReactActivity currentActivity = (ReactActivity) getCurrentActivity();
-
+    String referenceNumber = "SS" + Calendar.getInstance().getTimeInMillis();
     if (currentActivity == null) {
       promise.reject("ACTIVITY_NULL", "Activity is null");
       showToast("ACTIVITY_NULL");
       return;
     }
-
-    initFasstapMPOSSDK();
 
     if (amount != null && Double.parseDouble(amount) <= 0) {
       promise.reject("INVALID_AMOUNT", "Amount cannot be zero!");

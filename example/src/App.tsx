@@ -6,23 +6,24 @@ import {
   Text,
   TouchableOpacity,
   ToastAndroid,
+  NativeModules,
 } from 'react-native';
-import {
-  checkAndRequestNFCPermission,
-  multiply,
-  refreshToken,
-  startEMVProcessing,
-} from 'tap_pay_razer_rn';
+// import {
+//   checkAndRequestNFCPermission,
+//   multiply,
+//   refreshToken,
+//   startEMVProcessing,
+// } from 'tap_pay_razer_rn';
 
 export default function App() {
-  const [result, setResult] = React.useState<number | undefined>();
-
+  const { checkAndRequestNFCPermission, startEMVProcessing } =
+    NativeModules.TapPayRazer;
   React.useEffect(() => {
-    multiply(3, 7).then(setResult);
+    console.log(NativeModules.TapPayRazer, 'HELLO');
   }, []);
 
   const refreshTokenHandler = () => {
-    refreshToken();
+    // refreshToken();
   };
 
   const onPressHandler = () => {
