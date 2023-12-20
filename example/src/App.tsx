@@ -97,6 +97,7 @@ const App: React.FC<AppProps> = () => {
   };
 
   React.useEffect(() => {
+    // add your configurations
     const config = {
       attestationHost: 'https://mpos-uat.fasspay.com:9001',
       libSecretKey: 'Hej/j+o69unLyI/o5Bfd6U41IT406ub6HqNZrTP6+qQ=',
