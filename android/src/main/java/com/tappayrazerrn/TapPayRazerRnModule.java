@@ -55,6 +55,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeMap;
 import com.facebook.react.module.annotations.ReactModule;
@@ -89,6 +90,7 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
   private volatile boolean isTrxRunning = false;
   private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
   private static final int NFC_PERMISSION_REQUEST_CODE = 2;
+  private String TAG = NAME;
 
   public TapPayRazerRnModule(ReactApplicationContext reactContext) {
     super(reactContext);
@@ -98,7 +100,6 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
   @Override
   public void initialize() {
     super.initialize();
-    initFasstapMPOSSDK();
   }
 
   @ReactMethod
@@ -119,46 +120,57 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public void initFasstapMPOSSDK() {
+  public void initFasstapMPOSSDK(ReadableMap inputConfig) {
     final ReactApplicationContext reactContext = getReactApplicationContext();
-    // Run the entire initialization on the main thread
+    Log.i("ABUZAR", BuildConfig.ATTESTATION_HOST);
+
+    String attestationHost = inputConfig.getString("attestationHost");
+    String attestationCertPinning = inputConfig.getString(
+      "attestationCertPinning"
+    );
+    String libGooglePlayProjNumStr = inputConfig.getString(
+      "libGooglePlayProjNum"
+    );
+    String libAccessKey = inputConfig.getString("libAccessKey");
+    String libSecretKey = inputConfig.getString("libSecretKey");
+    String uniqueID = inputConfig.getString("uniqueID");
+    String developerID = inputConfig.getString("developerID");
+    String environmentValue = inputConfig.getString("environment");
 
     runOnUiThread(
       reactContext,
       new Runnable() {
         @Override
         public void run() {
-          // ... (configuration details)
           try {
+            Environment environment = environmentValue.equals("uat")
+              ? Environment.UAT
+              : Environment.PROD;
+
             SSMPOSSDKConfiguration config = SSMPOSSDKConfiguration.Builder
               .create()
-              .setAttestationHost(BuildConfig.ATTESTATION_HOST)
-              .setAttestationHostCertPinning(
-                BuildConfig.ATTESTATION_CERT_PINNING
-              )
+              .setAttestationHost(attestationHost)
+              .setAttestationHostCertPinning(attestationCertPinning)
               .setAttestationHostReadTimeout(10000L)
               .setAttestationRefreshInterval(300000L)
               .setAttestationStrictHttp(true)
               .setAttestationConnectionTimeout(30000L)
-              .setLibGooglePlayProjNum("262431422959") // use own google play project number
-              .setLibAccessKey(BuildConfig.ACCESS_KEY)
-              .setLibSecretKey(BuildConfig.SECRET_KEY)
-              .setUniqueID("xdIu2XwPpPRrTSaJdZi1") // please set the userID shared by Soft Space
-              .setDeveloperID("ZCh9mzZXqHzezf4")
-              .setEnvironment(
-                BuildConfig.FLAVOR_environment.equals("uat")
-                  ? Environment.UAT
-                  : Environment.PROD
-              )
+              .setLibGooglePlayProjNum(libGooglePlayProjNumStr) // use own google play project number
+              .setLibAccessKey(libAccessKey)
+              .setLibSecretKey(libSecretKey)
+              .setUniqueID(uniqueID) // please set the userID shared by Soft Space
+              .setDeveloperID(developerID)
+              .setEnvironment(environment)
               .build();
 
             SSMPOSSDK.init(reactContext, config);
           } catch (Exception e) {
-            showToast("FasstapMPOSSDK " + e.getMessage());
+            Log.e(TAG, e.getMessage());
           }
         }
       }
     );
+
     requestLocationPermission();
     requestNfcPermission();
   }
@@ -548,7 +560,7 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
 
   private void showToast(String message) {
     Toast
-      .makeText(getReactApplicationContext(), message, Toast.LENGTH_SHORT)
+      .makeText(getReactApplicationContext(), message, Toast.LENGTH_LONG)
       .show();
   }
 
@@ -609,13 +621,13 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
     final int CARD_DETECTED = 5;
     final int CARD_READ_ERROR = 6;
     final int CARD_READ_RETRY = 7;
+    final int CARD_READ_COMPLETED = 8;
 
     ReactActivity currentActivity = (ReactActivity) getCurrentActivity();
     String referenceNumber = "SS" + Calendar.getInstance().getTimeInMillis();
     // Add your event data to the params if needed
 
     if (currentActivity == null) {
-      promise.reject("ACTIVITY_NULL", "Activity is null");
       showToast("ACTIVITY_NULL");
       return;
     }
@@ -662,7 +674,6 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
               // Handle transaction result
               if (result == TransactionSuccessful) {
                 // Handle successful transaction
-                promise.resolve("Transaction completed successfully");
                 getReactApplicationContext()
                   .getJSModule(
                     DeviceEventManagerModule.RCTDeviceEventEmitter.class
@@ -714,10 +725,8 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
                       "Transaction Date Time UTC :: " +
                       transactionOutcome.getTransactionDateTime();
                   }
-                  promise.reject("TRANSACTION_FAILED", outcome);
                   showToast("TRANSACTION_FAILED");
                 } else {
-                  promise.reject("TRANSACTION_FAILED", "Error :: " + result);
                   showToast("TRANSACTION_FAILED" + "Error :: " + result);
                 }
               }
@@ -753,17 +762,19 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
                     )
                   );
                 }
-                promise.resolve("Card read completed");
                 showToast("Card read completed");
+                getReactApplicationContext()
+                  .getJSModule(
+                    DeviceEventManagerModule.RCTDeviceEventEmitter.class
+                  )
+                  .emit("TransactionEvent", CARD_READ_COMPLETED);
               } else if (event == TransactionUIEvent.RequestSignature) {
                 // Handle request signature event
-                promise.resolve("Signature is required");
                 showToast("Signature is required");
               } else {
                 // Handle other transaction UI events
                 switch (event) {
                   case TransactionUIEvent.PresentCard:
-                    promise.resolve("Present your card");
                     getReactApplicationContext()
                       .getJSModule(
                         DeviceEventManagerModule.RCTDeviceEventEmitter.class
@@ -771,7 +782,6 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
                       .emit("TransactionEvent", PRESENT_CARD);
                     break;
                   case TransactionUIEvent.Authorising:
-                    promise.resolve("Authorising...");
                     getReactApplicationContext()
                       .getJSModule(
                         DeviceEventManagerModule.RCTDeviceEventEmitter.class
@@ -783,7 +793,7 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
                       .getJSModule(
                         DeviceEventManagerModule.RCTDeviceEventEmitter.class
                       )
-                      .emit("TransactionEvent", "Card detected");
+                      .emit("TransactionEvent", CARD_DETECTED);
                     break;
                   case TransactionUIEvent.CardReadError:
                     getReactApplicationContext()
@@ -794,7 +804,6 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
                     showToast("CARD_READ_ERROR");
                     break;
                   case TransactionUIEvent.CardReadRetry:
-                    promise.reject("CARD_READ_RETRY", CARD_READ_RETRY);
                     getReactApplicationContext()
                       .getJSModule(
                         DeviceEventManagerModule.RCTDeviceEventEmitter.class
@@ -802,7 +811,6 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
                       .emit("TransactionEvent", CARD_READ_RETRY);
                     break;
                   default:
-                    promise.resolve("onTransactionUIEvent :: " + event);
                     getReactApplicationContext()
                       .getJSModule(
                         DeviceEventManagerModule.RCTDeviceEventEmitter.class
@@ -819,7 +827,6 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
         );
     } catch (Exception e) {
       // Log.e(TAG, e.getMessage(), e);
-      promise.reject("EXCEPTION", e);
       showToast("EXCEPTION FROM EMV " + e);
     }
   }
