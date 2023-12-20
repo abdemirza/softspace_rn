@@ -6,6 +6,17 @@ const LINKING_ERROR =
   '- You rebuilt the app after installing the package\n' +
   '- You are not using Expo Go\n';
 
+interface Config {
+  attestationHost: string;
+  attestationCertPinning: string;
+  libGooglePlayProjNum: string;
+  libAccessKey: string;
+  libSecretKey: string;
+  uniqueID: string;
+  developerID: string;
+  environment: string;
+}
+
 const TapPayRazerRn = NativeModules.TapPayRazerRn
   ? NativeModules.TapPayRazerRn
   : new Proxy(
@@ -20,7 +31,10 @@ const TapPayRazerRn = NativeModules.TapPayRazerRn
 export function multiply(a: number, b: number): Promise<number> {
   return TapPayRazerRn.multiply(a, b);
 }
-
+interface EMVProcessingCallback {
+  onTransactionCompleted: (result: string) => void;
+  onTransactionFailed: (error: string) => void;
+}
 export function startEMVProcessing(
   amount: string,
   referenceNumber: string
@@ -38,4 +52,12 @@ export function performSettlement(): Promise<boolean> {
 
 export function refreshToken(): Promise<boolean> {
   return TapPayRazerRn.refreshToken();
+}
+
+export function getInstance(): Promise<boolean> {
+  return TapPayRazerRn.getInstance();
+}
+
+export function initFasstapMPOSSDK(config: Config): Promise<boolean> {
+  return TapPayRazerRn.initFasstapMPOSSDK(config);
 }
