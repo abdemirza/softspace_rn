@@ -46,8 +46,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import com.facebook.react.ReactActivity;
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableMap;
@@ -73,6 +78,7 @@ import my.com.softspace.ssmpossdk.transaction.MPOSTransactionParams;
 public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
 
   public static final String NAME = "TapPayRazerRn";
+  private static TapPayRazerRnModule instance;
   private Activity mActivity = null;
   private static final String CARD_TYPE_VISA = "0";
   private static final String CARD_TYPE_MASTERCARD = "1";
@@ -82,15 +88,22 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
   private MPOSTransactionOutcome _transactionOutcome;
   private volatile boolean isTrxRunning = false;
   private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+  private static final int NFC_PERMISSION_REQUEST_CODE = 2;
 
   public TapPayRazerRnModule(ReactApplicationContext reactContext) {
     super(reactContext);
+    instance = this;
   }
 
   @Override
   public void initialize() {
     super.initialize();
     initFasstapMPOSSDK();
+  }
+
+  @ReactMethod
+  public static TapPayRazerRnModule getInstance() {
+    return instance;
   }
 
   // Custom callback interface that includes both transaction results and UI events
@@ -108,8 +121,8 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
   @ReactMethod
   public void initFasstapMPOSSDK() {
     final ReactApplicationContext reactContext = getReactApplicationContext();
-
     // Run the entire initialization on the main thread
+
     runOnUiThread(
       reactContext,
       new Runnable() {
@@ -140,45 +153,14 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
               .build();
 
             SSMPOSSDK.init(reactContext, config);
-
-            // Request permission using PermissionAwareActivity on the main thread
-            if (!SSMPOSSDK.hasRequiredPermission(reactContext)) {
-              final PermissionListener listener = new PermissionListener() {
-                @Override
-                public boolean onRequestPermissionsResult(
-                  int requestCode,
-                  String[] permissions,
-                  int[] grantResults
-                ) {
-                  boolean granted = true; // Modify as needed based on grantResults
-                  if (granted) {
-                    // Permission granted, continue with the initialization
-                  } else {
-                    // Permission denied, handle accordingly
-                  }
-                  return true;
-                }
-              };
-
-              // Run the permission request on the main thread
-              Activity activity = getCurrentActivity();
-              if (activity != null) {
-                PermissionAwareActivity permissionAwareActivity = (PermissionAwareActivity) activity;
-                if (permissionAwareActivity != null) {
-                  permissionAwareActivity.requestPermissions(
-                    new String[] { /* Add required permissions */ },
-                    1000,
-                    listener
-                  );
-                }
-              }
-            }
           } catch (Exception e) {
             showToast("FasstapMPOSSDK " + e.getMessage());
           }
         }
       }
     );
+    requestLocationPermission();
+    requestNfcPermission();
   }
 
   // Utility method to run code on the main thread
@@ -302,7 +284,6 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
 
   @ReactMethod
   private void refreshToken() {
-    showToast("refreshToken()");
     try {
       final Activity currentActivity = getCurrentActivity();
       // String userId = edtUserID.getText().toString();
@@ -330,9 +311,7 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
             }
 
             @Override
-            public void onTransactionUIEvent(int event) {
-              showToast("onTransactionUIEvent :: " + event);
-            }
+            public void onTransactionUIEvent(int event) {}
           }
         );
     } catch (Exception e) {
@@ -345,7 +324,6 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
     MPOSTransactionOutcome transactionOutcome
   ) {
     writeLog("onTransactionResult :: " + result);
-    showToast("handleRefreshTokenResult");
     if (result == TransactionSuccessful) {
       // enableTransactionButtons(true);
     } else {
@@ -527,23 +505,20 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
                   new Runnable() {
                     @Override
                     public void run() {
-                      showToast("onTransactionResult :: " + result);
-
                       if (
                         result != TransactionSuccessful &&
                         transactionOutcome != null
                       ) {
-                        showToast(
-                          transactionOutcome.getStatusCode() +
-                          " - " +
-                          transactionOutcome.getStatusMessage()
-                        );
+                        // showToast(
+                        //   transactionOutcome.getStatusCode() +
+                        //   " - " +
+                        //   transactionOutcome.getStatusMessage()
+                        // );
                       }
 
                       // Resolve the promise with the result
                       if (promise != null) {
                         promise.resolve(result);
-                        showToast("promise resolve ");
                       }
                     }
                   }
@@ -556,9 +531,7 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
                 .post(
                   new Runnable() {
                     @Override
-                    public void run() {
-                      showToast("onTransactionUIEvent :: " + event);
-                    }
+                    public void run() {}
                   }
                 );
             }
@@ -579,42 +552,41 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
       .show();
   }
 
-  // Check if the location permission is granted
-  public static boolean checkLocationPermission(Context context) {
-    int permissionResult = ActivityCompat.checkSelfPermission(
-      context,
-      Manifest.permission.ACCESS_FINE_LOCATION
+  @ReactMethod
+  public void requestLocationPermission() {
+    if (!checkLocationPermission()) {
+      ActivityCompat.requestPermissions(
+        getCurrentActivity(),
+        new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
+        LOCATION_PERMISSION_REQUEST_CODE
+      );
+    }
+  }
+
+  public void requestNfcPermission() {
+    if (!checkNfcPermission()) {
+      ActivityCompat.requestPermissions(
+        getCurrentActivity(),
+        new String[] { Manifest.permission.NFC },
+        NFC_PERMISSION_REQUEST_CODE
+      );
+    }
+  }
+
+  private boolean checkNfcPermission() {
+    int permissionResult = ContextCompat.checkSelfPermission(
+      getReactApplicationContext(),
+      Manifest.permission.NFC
     );
     return permissionResult == PackageManager.PERMISSION_GRANTED;
   }
 
-  // Request location permission
-  public static void requestLocationPermission(Context context) {
-    ActivityCompat.requestPermissions(
-      (Activity) context,
-      new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
-      LOCATION_PERMISSION_REQUEST_CODE
+  private boolean checkLocationPermission() {
+    int permissionResult = ContextCompat.checkSelfPermission(
+      getReactApplicationContext(),
+      Manifest.permission.ACCESS_FINE_LOCATION
     );
-  }
-
-  // Handle the result of the permission request
-  public static void onRequestPermissionsResult(
-    int requestCode,
-    String[] permissions,
-    int[] grantResults
-  ) {
-    if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-      if (
-        grantResults.length > 0 &&
-        grantResults[0] == PackageManager.PERMISSION_GRANTED
-      ) {
-        // Location permission granted
-        // You can now perform actions that require location access
-      } else {
-        // Location permission denied
-        // You may want to inform the user about the importance of the permission for your app's functionality
-      }
-    }
+    return permissionResult == PackageManager.PERMISSION_GRANTED;
   }
 
   @ReactMethod
@@ -623,8 +595,25 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
     String referenceNumberr,
     final Promise promise
   ) {
+    final String ACTIVITY_NULL_ERROR = "ACTIVITY_NULL";
+    final String INVALID_AMOUNT_ERROR = "INVALID_AMOUNT";
+    final String TRANSACTION_FAILED_ERROR = "TRANSACTION_FAILED";
+    final String CARD_READ_ERROR_MSG = "CARD_READ_ERROR";
+    final String CARD_READ_RETRY_ERROR = "CARD_READ_RETRY";
+    final String EXCEPTION_ERROR = "EXCEPTION";
+    final String TRANSACTION_EVENT = "TransactionEvent";
+    final int TRANSACTION_SUCCESSFUL = 1;
+    final int TRANSACTION_FAILED = 2;
+    final int PRESENT_CARD = 3;
+    final int AUTHORISING = 4;
+    final int CARD_DETECTED = 5;
+    final int CARD_READ_ERROR = 6;
+    final int CARD_READ_RETRY = 7;
+
     ReactActivity currentActivity = (ReactActivity) getCurrentActivity();
     String referenceNumber = "SS" + Calendar.getInstance().getTimeInMillis();
+    // Add your event data to the params if needed
+
     if (currentActivity == null) {
       promise.reject("ACTIVITY_NULL", "Activity is null");
       showToast("ACTIVITY_NULL");
@@ -632,7 +621,9 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
     }
 
     if (amount != null && Double.parseDouble(amount) <= 0) {
-      promise.reject("INVALID_AMOUNT", "Amount cannot be zero!");
+      getReactApplicationContext()
+        .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+        .emit("TransactionEvent", INVALID_AMOUNT_ERROR);
       return;
     }
 
@@ -641,7 +632,6 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
         @Override
         public void run() {
           writeLog("Amount, Authorised: " + amount);
-          showToast("Amount, Authorised::: " + amount);
         }
       }
     );
@@ -665,14 +655,26 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
               MPOSTransactionOutcome transactionOutcome
             ) {
               _transactionOutcome = transactionOutcome;
-              showToast("Line 668");
+              // currentActivity.runOnUiThread(
+              //   new Runnable() {
+              //     @Override
+              //     public void run() {
               // Handle transaction result
               if (result == TransactionSuccessful) {
                 // Handle successful transaction
-                showToast("Transaction completed successfully");
                 promise.resolve("Transaction completed successfully");
+                getReactApplicationContext()
+                  .getJSModule(
+                    DeviceEventManagerModule.RCTDeviceEventEmitter.class
+                  )
+                  .emit("TransactionEvent", TRANSACTION_SUCCESSFUL);
               } else if (result == TransactionFailed) {
                 // Handle failed transaction
+                getReactApplicationContext()
+                  .getJSModule(
+                    DeviceEventManagerModule.RCTDeviceEventEmitter.class
+                  )
+                  .emit("TransactionEvent", TRANSACTION_FAILED);
                 if (transactionOutcome != null) {
                   String outcome =
                     transactionOutcome.getStatusCode() +
@@ -719,71 +721,99 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
                   showToast("TRANSACTION_FAILED" + "Error :: " + result);
                 }
               }
+              // }
+              // }
+              // );
               // toggleTransactionRunning(false);
             }
 
             @Override
             public void onTransactionUIEvent(int event) {
-              currentActivity.runOnUiThread(
-                new Runnable() {
-                  @Override
-                  public void run() {
-                    showToast("Line 686 running");
-                    // Handle transaction UI events
-                    if (event == TransactionUIEvent.CardReadOk) {
-                      // Handle card read OK event
-                      ToneGenerator toneGenerator = new ToneGenerator(
-                        AudioManager.STREAM_MUSIC,
-                        ToneGenerator.MAX_VOLUME
-                      );
-                      toneGenerator.startTone(ToneGenerator.TONE_DTMF_P, 500);
+              // currentActivity.runOnUiThread(
+              // new Runnable() {
+              // @Override
+              // public void run() {
+              // Handle transaction UI events
+              if (event == TransactionUIEvent.CardReadOk) {
+                // Handle card read OK event
+                ToneGenerator toneGenerator = new ToneGenerator(
+                  AudioManager.STREAM_MUSIC,
+                  ToneGenerator.MAX_VOLUME
+                );
+                toneGenerator.startTone(ToneGenerator.TONE_DTMF_P, 500);
 
-                      Vibrator v = (Vibrator) currentActivity.getSystemService(
-                        Context.VIBRATOR_SERVICE
-                      );
-                      if (v.hasVibrator()) {
-                        v.vibrate(
-                          VibrationEffect.createOneShot(
-                            200,
-                            VibrationEffect.DEFAULT_AMPLITUDE
-                          )
-                        );
-                      }
-                      promise.resolve("Card read completed");
-                      showToast("Card read completed");
-                    } else if (event == TransactionUIEvent.RequestSignature) {
-                      // Handle request signature event
-                      promise.resolve("Signature is required");
-                      showToast("Signature is required");
-                    } else {
-                      // Handle other transaction UI events
-                      switch (event) {
-                        case TransactionUIEvent.PresentCard:
-                          promise.resolve("Present your card");
-                          showToast("Present your card");
-                          break;
-                        case TransactionUIEvent.Authorising:
-                          promise.resolve("Authorising...");
-                          showToast("Authorising...");
-                          break;
-                        case TransactionUIEvent.CardPresented:
-                          showToast("Card detected");
-                          break;
-                        case TransactionUIEvent.CardReadError:
-                          promise.reject("CARD_READ_ERROR", "Card read failed");
-                          showToast("CARD_READ_ERROR");
-                        case TransactionUIEvent.CardReadRetry:
-                          promise.reject("CARD_READ_RETRY", "Card read retry");
-                          showToast("CARD_READ_RETRY");
-                          break;
-                        default:
-                          promise.resolve("onTransactionUIEvent :: " + event);
-                          break;
-                      }
-                    }
-                  }
+                Vibrator v = (Vibrator) currentActivity.getSystemService(
+                  Context.VIBRATOR_SERVICE
+                );
+                if (v.hasVibrator()) {
+                  v.vibrate(
+                    VibrationEffect.createOneShot(
+                      200,
+                      VibrationEffect.DEFAULT_AMPLITUDE
+                    )
+                  );
                 }
-              );
+                promise.resolve("Card read completed");
+                showToast("Card read completed");
+              } else if (event == TransactionUIEvent.RequestSignature) {
+                // Handle request signature event
+                promise.resolve("Signature is required");
+                showToast("Signature is required");
+              } else {
+                // Handle other transaction UI events
+                switch (event) {
+                  case TransactionUIEvent.PresentCard:
+                    promise.resolve("Present your card");
+                    getReactApplicationContext()
+                      .getJSModule(
+                        DeviceEventManagerModule.RCTDeviceEventEmitter.class
+                      )
+                      .emit("TransactionEvent", PRESENT_CARD);
+                    break;
+                  case TransactionUIEvent.Authorising:
+                    promise.resolve("Authorising...");
+                    getReactApplicationContext()
+                      .getJSModule(
+                        DeviceEventManagerModule.RCTDeviceEventEmitter.class
+                      )
+                      .emit("TransactionEvent", AUTHORISING);
+                    break;
+                  case TransactionUIEvent.CardPresented:
+                    getReactApplicationContext()
+                      .getJSModule(
+                        DeviceEventManagerModule.RCTDeviceEventEmitter.class
+                      )
+                      .emit("TransactionEvent", "Card detected");
+                    break;
+                  case TransactionUIEvent.CardReadError:
+                    getReactApplicationContext()
+                      .getJSModule(
+                        DeviceEventManagerModule.RCTDeviceEventEmitter.class
+                      )
+                      .emit("TransactionEvent", CARD_READ_ERROR_MSG);
+                    showToast("CARD_READ_ERROR");
+                    break;
+                  case TransactionUIEvent.CardReadRetry:
+                    promise.reject("CARD_READ_RETRY", CARD_READ_RETRY);
+                    getReactApplicationContext()
+                      .getJSModule(
+                        DeviceEventManagerModule.RCTDeviceEventEmitter.class
+                      )
+                      .emit("TransactionEvent", CARD_READ_RETRY);
+                    break;
+                  default:
+                    promise.resolve("onTransactionUIEvent :: " + event);
+                    getReactApplicationContext()
+                      .getJSModule(
+                        DeviceEventManagerModule.RCTDeviceEventEmitter.class
+                      )
+                      .emit("TransactionEvent", event);
+                    break;
+                }
+              }
+              // }
+              // }
+              // );
             }
           }
         );
@@ -792,5 +822,11 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
       promise.reject("EXCEPTION", e);
       showToast("EXCEPTION FROM EMV " + e);
     }
+  }
+
+  private void emitEvent(String eventName, Object eventData) {
+    getReactApplicationContext()
+      .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+      .emit(eventName, eventData);
   }
 }
