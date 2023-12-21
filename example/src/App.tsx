@@ -97,17 +97,16 @@ const App: React.FC<AppProps> = () => {
   };
 
   React.useEffect(() => {
-    // add your configurations
+    // add your configurations here
     const config = {
-      attestationHost: 'https://mpos-uat.fasspay.com:9001',
-      libSecretKey: 'Hej/j+o69unLyI/o5Bfd6U41IT406ub6HqNZrTP6+qQ=',
-      attestationCertPinning:
-        'sha256/BJlJjxY7OHxhAz6yqy2gm58+qlP0AGwnBHDIG6zkhfU=',
-      libGooglePlayProjNum: '262431422959',
-      libAccessKey: 'ANTSPb9gbzBsmQ5nT0tYwnWjyF+Fec99zlrlKSsjrMkfAg==',
-      uniqueID: 'xdIu2XwPpPRrTSaJdZi1',
-      developerID: 'ZCh9mzZXqHzezf4',
-      environment: 'uat',
+      attestationHost: '',
+      libSecretKey: '',
+      attestationCertPinning: '',
+      libGooglePlayProjNum: '',
+      libAccessKey: '',
+      uniqueID: '',
+      developerID: '',
+      environment: '',
     };
     initFasstapMPOSSDK(config);
 
