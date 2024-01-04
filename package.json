@@ -1,7 +1,7 @@
 {
-  "name": "tap_pay_razer_rn",
-  "version": "0.1.0",
-  "description": "enable contactless payments on razer",
+  "name": "softspace_rn",
+  "version": "0.1.2",
+  "description": "react-native library for softspace to enable contactless payments",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
   "types": "lib/typescript/src/index.d.ts",

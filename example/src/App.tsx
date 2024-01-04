@@ -10,12 +10,13 @@ import {
   Modal,
   ActivityIndicator,
 } from 'react-native';
+
 import {
   checkAndRequestNFCPermission,
   initFasstapMPOSSDK,
   refreshToken,
   startEMVProcessing,
-} from 'tap_pay_razer_rn';
+} from 'softspace_rn';
 
 type TransactionStatus =
   | null

@@ -75,11 +75,11 @@ import my.com.softspace.ssmpossdk.transaction.MPOSTransaction;
 import my.com.softspace.ssmpossdk.transaction.MPOSTransactionOutcome;
 import my.com.softspace.ssmpossdk.transaction.MPOSTransactionParams;
 
-@ReactModule(name = TapPayRazerRnModule.NAME)
-public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
+@ReactModule(name = SoftSpaceModule.NAME)
+public class SoftSpaceModule extends ReactContextBaseJavaModule {
 
   public static final String NAME = "TapPayRazerRn";
-  private static TapPayRazerRnModule instance;
+  private static SoftSpaceModule instance;
   private Activity mActivity = null;
   private static final String CARD_TYPE_VISA = "0";
   private static final String CARD_TYPE_MASTERCARD = "1";
@@ -92,7 +92,7 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
   private static final int NFC_PERMISSION_REQUEST_CODE = 2;
   private String TAG = NAME;
 
-  public TapPayRazerRnModule(ReactApplicationContext reactContext) {
+  public SoftSpaceModule(ReactApplicationContext reactContext) {
     super(reactContext);
     instance = this;
   }
@@ -103,7 +103,7 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public static TapPayRazerRnModule getInstance() {
+  public static SoftSpaceModule getInstance() {
     return instance;
   }
 
@@ -122,7 +122,6 @@ public class TapPayRazerRnModule extends ReactContextBaseJavaModule {
   @ReactMethod
   public void initFasstapMPOSSDK(ReadableMap inputConfig) {
     final ReactApplicationContext reactContext = getReactApplicationContext();
-    Log.i("ABUZAR", BuildConfig.ATTESTATION_HOST);
 
     String attestationHost = inputConfig.getString("attestationHost");
     String attestationCertPinning = inputConfig.getString(

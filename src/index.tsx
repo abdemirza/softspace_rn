@@ -31,10 +31,7 @@ const TapPayRazerRn = NativeModules.TapPayRazerRn
 export function multiply(a: number, b: number): Promise<number> {
   return TapPayRazerRn.multiply(a, b);
 }
-interface EMVProcessingCallback {
-  onTransactionCompleted: (result: string) => void;
-  onTransactionFailed: (error: string) => void;
-}
+
 export function startEMVProcessing(
   amount: string,
   referenceNumber: string

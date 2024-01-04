@@ -486,7 +486,7 @@ PODS:
     - React-logger (= 0.72.7)
     - React-perflogger (= 0.72.7)
   - SocketRocket (0.6.1)
-  - tap-pay-razer-rn (0.1.0):
+  - tap-pay-razer-rn (0.1.1):
     - RCT-Folly (= 2021.07.22.00)
     - React-Core
   - Yoga (1.14.0)
@@ -711,10 +711,10 @@ SPEC CHECKSUMS:
   React-utils: 56838edeaaf651220d1e53cd0b8934fb8ce68415
   ReactCommon: 5f704096ccf7733b390f59043b6fa9cc180ee4f6
   SocketRocket: f32cd54efbe0f095c4d7594881e52619cfe80b17
-  tap-pay-razer-rn: d27fa6219a8a793fef7f816775a57ce6a70cf49d
+  tap-pay-razer-rn: 4d2501edde496688071d83b10c7394e21e418234
   Yoga: 4c3aa327e4a6a23eeacd71f61c81df1bcdf677d5
   YogaKit: f782866e155069a2cca2517aafea43200b01fd5a
 
 PODFILE CHECKSUM: d1d6495e5f908e0075657086aebc6d3a3c210d25
 
-COCOAPODS: 1.13.0
+COCOAPODS: 1.14.3
