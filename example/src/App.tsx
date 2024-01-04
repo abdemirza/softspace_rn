@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 
 import {
-  checkAndRequestNFCPermission,
   initFasstapMPOSSDK,
   refreshToken,
   startEMVProcessing,

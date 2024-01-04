@@ -1,22 +1,46 @@
 # tap_pay_razer_rn
 
-enable contactless payments on razer
+Enable contactless payments on react native
 
 ## Installation
 
 ```sh
-npm install tap_pay_razer_rn
+npm install softspace_rn
 ```
 
 ## Usage
 
 ```js
-import { multiply } from 'tap_pay_razer_rn';
+import {
+  initFasstapMPOSSDK,
+  refreshToken,
+  startEMVProcessing,
+} from 'softspace_rn';
 
-// ...
+// initialise the library with your creds
+React.useEffect(() => {
+  // add your configurations here
+  const config = {
+    attestationHost: '',
+    libSecretKey: '',
+    attestationCertPinning: '',
+    libGooglePlayProjNum: '',
+    libAccessKey: '',
+    uniqueID: '',
+    developerID: '',
+    environment: '',
+  };
+  initFasstapMPOSSDK(config);
+  refreshToken();
+}, []);
 
-const result = await multiply(3, 7);
+// to start the payment call this method with the amount
+startEmvProcessing('1000');
 ```
+
+## How to run example app
+
+To run the example app replace the my-release-key.keystore with your keystore file and add change the credentials in gradle.properties to run the app properly
 
 ## Contributing
 
